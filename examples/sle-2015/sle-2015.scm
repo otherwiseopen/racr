@@ -8,7 +8,7 @@
 (import (rnrs) (racr core) (racr testing))
 
 (define language              (create-specification))
-(define (=? e1 e2)            (equal? e1 e2))
+
 ; AST Accessors:
 (define (->DErr n)            (ast-child 'DErr n))
 (define (->Stmt* n)           (ast-child 'Stmt* n))
@@ -19,6 +19,7 @@
 (define (<- n)                (ast-parent n))
 (define (->* n)               (ast-children n))
 (define (index n)             (ast-child-index n))
+
 ; Attribute Accessors:
 (define (L-Decl n name)       (att-value 'L-Decl n name))
 (define (G-Decl n name)       (att-value 'G-Decl n name))
@@ -26,12 +27,7 @@
 (define (Well-formed? n)      (att-value 'Well-formed? n))
 (define (Needs-coercion? n)   (att-value 'Needs-coercion? n))
 (define (Superfluous-cast? n) (att-value 'Superfluous-cast? n))
-; Type Support:
-(define Integer               (list 'Integer))
-(define Real                  (list 'Real))
-(define Error-Type            (list 'Error-Type))
-(define (valid-type! t)
-  (if (memq t (list Integer Real)) t (raise "Unknown type.")))
+
 ; AST Constructors:
 (define (Prog . s)
   (create-ast language 'Prog (list (create-ast-list s) (DErr))))
@@ -49,6 +45,14 @@
   (create-ast language 'BiOp (list op1 op2)))
 (define (Use? n)
   (and (not (ast-list-node? n)) (=? (ast-node-type n) 'Use)))
+
+; Type Support & Support Functions:
+(define (=? e1 e2)            (equal? e1 e2))
+(define Integer               (list 'Integer))
+(define Real                  (list 'Real))
+(define Error-Type            (list 'Error-Type))
+(define (valid-type! t)
+  (if (memq t (list Integer Real)) t (raise "Unknown type.")))
 
 ;;; Abstract Syntax Tree Scheme:
 
@@ -118,15 +122,14 @@
  language
  
  (ag-rule
-  Needs-coercion?
-  (Prog (lambda (n) #f))
-  ((Cast Op1)
-   (lambda (n) #f))
-  ((BiOp Op1)
+  Needs-coercion? ; Inherited attribute
+  (Prog (lambda (n) #f)) ; Default...
+  ((Cast Op1) (lambda (n) #f)) ; ...equations
+  ((BiOp Op1) ; Equation for first operand
    (lambda (n)
      (and (=? (Type n) Integer)
           (=? (Type (->Op2 (<- n))) Real))))
-  ((BiOp Op2)
+  ((BiOp Op2) ; Equation for second operand
    (lambda (n)
      (and (=? (Type n) Integer)
           (=? (Type (->Op1 (<- n))) Real))))))
@@ -142,7 +145,7 @@
  language
  
  (ag-rule
-  Superfluous-cast?
+  Superfluous-cast? ; Synthesised attribute
   (Prog (lambda (n) #f))
   (Stmt (lambda (n) #f))
   (Cast (lambda (n) (=? (Type n) (Type (->Op1 n)))))))
@@ -152,15 +155,15 @@
     (rewrite-subtree op1 (create-ast-bud))
     (rewrite-subtree n op1)))
 
-;;; Program normalisation:
+;;; Program Normalisation:
 
 (define (normalise-program n)
-  (let ((trans1
-         (lambda (n)
+  (let ((trans1 ; Transformer function...
+         (lambda (n) ; ...for type coercion
            (and (Needs-coercion? n)
                 (cast-to-real n))))
-        (trans2
-         (lambda (n)
+        (trans2 ; Transformer function...
+         (lambda (n) ; ...for cast optimisation
            (and (Superfluous-cast? n)
                 (delete-cast n)))))
     (perform-rewrites n 'top-down trans1 trans2)))
