@@ -19,11 +19,9 @@ endif
 
 TMP := $(shell mktemp compile-script.XXXX)
 
-all: racr.core.dll hashtable-iron-scheme-adapter.dll Racr.dll
-	rm compile-script.*
-	if [ -d racr ]; then rm -r racr; fi
+all: racr.core.dll racr.testing.dll hashtable-iron-scheme-adapter.dll Racr.dll
 
-racr.core.dll hashtable-iron-scheme-adapter.dll:  ../racr/core.scm transcribe.py Makefile
+racr.core%dll racr.testing%dll hashtable-iron-scheme-adapter%dll: ../racr/core.scm transcribe.py Makefile
 	mkdir -p racr
 	./transcribe.py
 	echo '(import (racr core) (racr testing))' > $(TMP)
@@ -33,6 +31,8 @@ racr.core.dll hashtable-iron-scheme-adapter.dll:  ../racr/core.scm transcribe.py
 		system("mv " substr($$0,3) "/racr.testing.dll .");\
 		system("mv " substr($$0,3) "/hashtable-iron-scheme-adapter.dll .");\
 	}'
+	rm -r racr
+	rm ${TMP}
 
 Racr.dll: racr.core.dll hashtable-iron-scheme-adapter.dll
 	xbuild
@@ -41,4 +41,4 @@ Racr.dll: racr.core.dll hashtable-iron-scheme-adapter.dll
 clean:
 	rm -f racr.core.dll racr.testing.dll hashtable-iron-scheme-adapter.dll
 	rm -rf bin obj Racr.dll
-	rm compile-script.*
+	rm -f compile-script.*
