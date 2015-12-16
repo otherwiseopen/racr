@@ -34,7 +34,7 @@ racr.core%dll racr.testing%dll hashtable-iron-scheme-adapter%dll: ../racr/core.s
 	rm -r racr
 	rm ${TMP}
 
-Racr.dll: racr.core.dll hashtable-iron-scheme-adapter.dll
+Racr.dll: racr.core.dll hashtable-iron-scheme-adapter.dll Racr.cs
 	xbuild
 	cp bin/Debug/Racr.dll .
 
