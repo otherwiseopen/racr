@@ -229,21 +229,24 @@ static public class Racr {
 		}
 
 		// TODO circDef!!!
-		public void SpecifyAttribute(string attName, string nonTerminal, string contextName, bool cached, Delegate equation) {
+		public void SpecifyAttribute(string attName, string nonTerminal, string contextName, bool cached, MethodInfo equation) {
 			specifyAttribute.Call(
 				spec,
 				SymbolTable.StringToObject(attName),
 				SymbolTable.StringToObject(nonTerminal),
 				SymbolTable.StringToObject(contextName),
 				cached,
-				WrapToCallable(equation.Method),
+				WrapToCallable(equation),
 				false);
 		}
+		public void SpecifyAttribute(string attName, string nonTerminal, string contextName, bool cached, Delegate equation) {
+			SpecifyAttribute(attName, nonTerminal, contextName, cached, ((Delegate) equation).Method);
+		}
 		public void SpecifyAttribute<R>(string attName, string nonTerminal, string contextName, bool cached, Func<AstNode,R> equation) {
-			SpecifyAttribute(attName, nonTerminal, contextName, cached, (Delegate) equation);
+			SpecifyAttribute(attName, nonTerminal, contextName, cached, ((Delegate) equation).Method);
 		}
 		public void SpecifyAttribute<R,T>(string attName, string nonTerminal, string contextName, bool cached, Func<AstNode,R,T> equation) {
-			SpecifyAttribute(attName, nonTerminal, contextName, cached, (Delegate) equation);
+			SpecifyAttribute(attName, nonTerminal, contextName, cached, ((Delegate) equation).Method);
 		}
 
 		// factory methods
